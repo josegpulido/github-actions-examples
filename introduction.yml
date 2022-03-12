@@ -47,10 +47,12 @@ jobs:
     # marketplace de Github Actions o hasta una action del repositorio de
     # acciones de Docker.
     steps:
-      - name: Instalación de Node y NPM
+      - name: Descargando repositorio
         # 'uses' le indica al step que usará una action prefabricada, en este
-        # caso una de Github Actions que sirve para instalar Node y NPM en la
-        # máquina virtual.
+        # caso actions/checkout@v3 descarga el repositorio en la máquina virtual.
+        uses: actions/checkout@v3
+      - name: Instalación de Node y NPM
+        # Instalando Node y NPM en la máquina virtual mediante actions/setup-node@v2.
         uses: actions/setup-node@v2
         # 'with' permite pasar valores a una action
         with:
