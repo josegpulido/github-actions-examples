@@ -1,0 +1,82 @@
+# Cada archivo de configuración de Github Actions define una tarea
+# y utiliza la sintaxis YAML.
+
+# Nombre del workflow que además Github usará para identificarlo en
+# el sección de Github Actions del repositorio.
+name: flujo-integracion-continua
+
+# El bloque 'on' define los eventos o casos en los que el workflow
+# se ejecutará.
+on:
+  # Correr el workflow cuando se detecte un evento tipo push o pull
+  # sobre la rama master.
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+      # La sig. línea incluye también a todas las ramas que comiencen
+      # con la palabra 'hotfix/'.
+      - 'hotfix/**'
+  # 'workflow_dispatch' permitir considerar la web de Github como un
+  # evento al que el workflow responderá, o en otras palabras, permitirá
+  # ejecutar el workflow manualmente desde la web.
+  workflow_dispatch:
+
+# 'env' define variables de entorno invocables desde cualquier job
+env:
+  DIA_SEMANA: lunes
+
+# El bloque 'jobs' agrupa todos los job que se ejecutarán en este
+# workflow. Cada job tendrá su propio identificador único. Si un nombre
+# no se especifica en 'name', el job tomará dicho id como nombre.
+jobs:
+  pruebas:
+    name: Etapa de pruebas
+    # 'runs-on' define el tipo de máquina virtual a ejecutar
+    runs-on: ubuntu-latest
+    # 'env' definirá variables de entorno para todos los steps ubicados
+    # dentro de este job.
+    env:
+      # Más sobre secrets y otros contextos:
+      # + https://docs.github.com/en/actions/learn-github-actions/contexts
+      CADENA_SECRETA_1: ${{secrets.TOKEN_ESPECIAL}}
+    # 'steps' agrupa todos los steps que el job ejecutará, que bien pueden
+    # ser scripts de shell, actions privadas, actions publicadas en la
+    # marketplace de Github Actions o hasta una action del repositorio de
+    # acciones de Docker.
+    steps:
+      - name: Instalación de Node y NPM
+        # 'uses' le indica al step que usará una action prefabricada, en este
+        # caso una de Github Actions que sirve para instalar Node y NPM en la
+        # máquina virtual.
+        uses: actions/setup-node@v2
+        # 'with' permite pasar valores a una action
+        with:
+          node-version: '14'
+      - name: Instalación de paquete express-generator
+        # 'run' corre un comando directamente en una shell. Cada step corre una
+        # Non-Login-Shell por defecto, pero puede especificarse en el mismo step
+        # si se usará en su lugar una Login-Shell.
+        run: npm i -g express-generator
+      - name : Otros paquetes de NPM
+        # 'env' definirá variables de entorno solo para este step
+        env:
+          VARIABLE_EXTRA: 48
+        # Ejemplo de 'run' con formato multilínea
+        run: |
+          npm i yargs
+          npm clean cache
+          echo "Variable ==> $VARIABLE_EXTRA"
+      - run: 
+  compilacion:
+    runs-on: ubuntu-latest
+    # 'needs' establece que este job se ejecutará solo después de que el
+    # job llamado 'pruebas' haya finalizado.
+    needs: pruebas
+  despliegue:
+    runs-on: ubuntu-latest
+    # En este caso, 'needs' necesita sí o sí de un conjunto de jobs
+    # previamente ejecutados con éxito.
+    needs: [ pruebas, compilacion ]
